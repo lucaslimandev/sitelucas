@@ -1,9 +1,91 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Lucas Lima Dev | Portfólio</title>
+    <style>
+      :root {
+        --primary: #00d1b2;
+        --dark: #1a1a1a;
+        --light: #f4f4f4;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        background-color: var(--light);
+        color: #333;
+      }
+      header {
+        background-color: var(--dark);
+        color: white;
+        padding: 2rem 0;
+        text-align: center;
+      }
+      nav {
+        display: flex;
+        justify-content: center;
+        background: #333;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+      nav a {
+        color: white;
+        padding: 15px 25px;
+        text-decoration: none;
+        text-transform: uppercase;
+        font-weight: bold;
+        font-size: 14px;
+        transition: 0.3s;
+      }
+      nav a:hover {
+        color: var(--primary);
+        background: #444;
+      }
+      .hero {
+        padding: 60px 20px;
+        text-align: center;
+        background: white;
+      }
+      .container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+      footer {
+        text-align: center;
+        padding: 20px;
+        background: var(--dark);
+        color: white;
+        margin-top: 50px;
+      }
+    </style>
   </head>
-  <body></body>
+  <body>
+    <header>
+      <h1>LUCAS LIMA <span style="color: var(--primary)">DEV</span></h1>
+      <p>Desenvolvedor Full Stack & Soluções Digitais</p>
+    </header>
+
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="projetos.html">Projetos</a>
+      <a href="sobre.html">Sobre Mim</a>
+      <a href="contato.html">Contato</a>
+    </nav>
+
+    <div class="hero">
+      <h2>Transformando ideias em código.</h2>
+      <p>
+        Bem-vindo ao meu espaço oficial. Explore meus projetos e tecnologias.
+      </p>
+    </div>
+
+    <div class="container"></div>
+
+    <footer>
+      &copy; 2026 lucaslimandev.com.br - Todos os direitos reservados.
+    </footer>
+  </body>
 </html>
