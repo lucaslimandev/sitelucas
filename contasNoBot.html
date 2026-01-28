@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parser: Nome -> nome:senha</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --card: rgba(255, 255, 255, 0.06);
+        --card2: rgba(255, 255, 255, 0.09);
+        --text: #e8eefc;
+        --muted: rgba(232, 238, 252, 0.7);
+        --border: rgba(255, 255, 255, 0.12);
+        --accent: #00d1b2;
+        --danger: #ff5d5d;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        background:
+          radial-gradient(
+            1200px 800px at 20% 10%,
+            rgba(0, 209, 178, 0.18),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 700px at 80% 20%,
+            rgba(120, 80, 255, 0.16),
+            transparent 60%
+          ),
+          var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        gap: 16px;
+      }
+
+      header {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 16px 18px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, var(--card), transparent);
+        border-radius: 14px;
+      }
+
+      h1 {
+        font-size: 18px;
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+
+      .hint {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+
+      .card .top {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: var(--card2);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .card .top strong {
+        font-size: 13px;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .card .content {
+        padding: 12px 14px 14px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 380px;
+        resize: vertical;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        padding: 12px 12px;
+        outline: none;
+        line-height: 1.35;
+        font-size: 13px;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+      }
+
+      textarea:focus {
+        border-color: rgba(0, 209, 178, 0.6);
+        box-shadow: 0 0 0 3px rgba(0, 209, 178, 0.12);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .btns {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        transition:
+          0.15s transform,
+          0.15s background;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      .primary {
+        border-color: rgba(0, 209, 178, 0.5);
+        background: rgba(0, 209, 178, 0.14);
+      }
+
+      .primary:hover {
+        background: rgba(0, 209, 178, 0.18);
+      }
+
+      .danger {
+        border-color: rgba(255, 93, 93, 0.55);
+        background: rgba(255, 93, 93, 0.12);
+      }
+
+      .danger:hover {
+        background: rgba(255, 93, 93, 0.16);
+      }
+
+      .meta {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .pill {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        padding: 6px 10px;
+        border-radius: 999px;
+      }
+
+      .ok {
+        color: rgba(0, 209, 178, 1);
+      }
+
+      .warn {
+        color: rgba(255, 93, 93, 1);
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 8px;
+        line-height: 1.35;
+      }
+
+      .footer {
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Extrator (colar tabela → <code>nome:senha</code>)</h1>
+          <div class="hint">
+            Cole o bloco no campo da esquerda e clique em <b>Gerar</b>.
+            <br />
+            Ele pega a primeira linha “válida” de cada bloco (nome da conta) e
+            retorna no formato <code>nome:senha</code>.
+          </div>
+        </div>
+        <div class="meta">
+          <span class="pill">HTML + CSS + JS</span>
+          <span class="pill">sem libs</span>
+        </div>
+      </header>
+
+      <div class="grid">
+        <div class="card">
+          <div class="top">
+            <strong>Entrada (cole aqui)</strong>
+            <span id="statusIn" class="pill">0 chars</span>
+          </div>
+          <div class="content">
+            <textarea
+              id="input"
+              placeholder="Cole aqui o conteúdo..."
+            ></textarea>
+
+            <div class="actions">
+              <div class="btns">
+                <button class="primary" id="btnGenerate">Gerar</button>
+                <button id="btnClear">Limpar</button>
+                <button class="danger" id="btnExample">Exemplo</button>
+              </div>
+              <div class="meta">
+                <span class="pill">Contas: <b id="count">0</b></span>
+                <span class="pill">Duplicadas removidas</span>
+              </div>
+            </div>
+
+            <div class="small">
+              Dica: se você quiser trocar <code>senha</code> por outra coisa,
+              altere no código em <code>OUTPUT_SUFFIX</code>.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="top">
+            <strong>Saída</strong>
+            <span id="statusOut" class="pill">pronto</span>
+          </div>
+          <div class="content">
+            <textarea
+              id="output"
+              readonly
+              placeholder="Vai aparecer aqui..."
+            ></textarea>
+
+            <div class="actions">
+              <div class="btns">
+                <button class="primary" id="btnCopy">Copiar</button>
+                <button id="btnDownload">Baixar .txt</button>
+              </div>
+              <div class="meta">
+                <span class="pill" id="copyState">—</span>
+              </div>
+            </div>
+
+            <div class="footer">momo 🧠</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // =========================
+      // CONFIG
+      // =========================
+      const OUTPUT_SUFFIX = ":senha"
+
+      // Linhas que NÃO podem ser nome de conta
+      const BLOCKLIST_EXACT = new Set([
+        "Padrao",
+        "Padrão",
+        "Livre",
+        "PROPHECY",
+        "BE",
+        "-",
+      ])
+
+      // Se a linha "parece" ser outra coluna (números, coordenada, Kxx, horário)
+      const looksLikeNonName = (s) => {
+        const t = s.trim()
+
+        if (!t) return true
+        if (BLOCKLIST_EXACT.has(t)) return true
+
+        // só números (ex: 139, 1142, 4)
+        if (/^\d+$/.test(t)) return true
+
+        // coordenadas tipo 470|553 K54
+        if (/^\d{2,3}\|\d{2,3}\s*K\d{2}$/i.test(t)) return true
+
+        // horário tipo 03:11
+        if (/^\d{2}:\d{2}$/.test(t)) return true
+
+        // números com pontos (ex: 175.047) ou com separadores
+        if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) return true
+        if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) return true
+
+        // qualquer coisa que contenha "|" e K (tabela)
+        if (/\|/.test(t) && /K\d+/i.test(t)) return true
+
+        return false
+      }
+
+      // Linha válida de nome: não entra na blocklist e não parece coluna numérica
+      const isValidNameLine = (line) => {
+        const s = line.trim()
+        if (!s) return false
+        if (looksLikeNonName(s)) return false
+
+        // evita pegar lixo com muitos espaços (colunas)
+        if (/\s{2,}/.test(s)) return false
+
+        // nomes podem ter letras/números/_ etc. (bem permissivo)
+        // mas evita coisas muito longas absurdas
+        if (s.length > 60) return false
+
+        return true
+      }
+
+      // Extrai nomes pela ideia: blocos separados por linhas vazias, pegar 1ª linha válida do bloco
+      function extractNames(raw) {
+        const lines = raw.replace(/\r/g, "").split("\n")
+        const blocks = []
+        let cur = []
+
+        for (const line of lines) {
+          if (line.trim() === "") {
+            if (cur.length) {
+              blocks.push(cur)
+              cur = []
+            }
+          } else {
+            cur.push(line)
+          }
+        }
+        if (cur.length) blocks.push(cur)
+
+        const names = []
+        const seen = new Set()
+
+        for (const block of blocks) {
+          let name = null
+          for (const l of block) {
+            if (isValidNameLine(l)) {
+              name = l.trim()
+              break
+            }
+          }
+          if (name && !seen.has(name)) {
+            seen.add(name)
+            names.push(name)
+          }
+        }
+
+        return names
+      }
+
+      // =========================
+      // UI
+      // =========================
+      const $ = (id) => document.getElementById(id)
+
+      const input = $("input")
+      const output = $("output")
+      const count = $("count")
+      const statusIn = $("statusIn")
+      const statusOut = $("statusOut")
+      const copyState = $("copyState")
+
+      function updateCharCount() {
+        statusIn.textContent = `${input.value.length} chars`
+      }
+
+      function setOutStatus(text, kind = "ok") {
+        statusOut.textContent = text
+        statusOut.classList.remove("ok", "warn")
+        statusOut.classList.add(kind === "warn" ? "warn" : "ok")
+      }
+
+      function generate() {
+        const raw = input.value || ""
+        const names = extractNames(raw)
+
+        const lines = names.map((n) => `${n}${OUTPUT_SUFFIX}`)
+        output.value = lines.join("\n")
+        count.textContent = String(names.length)
+
+        if (names.length === 0) {
+          setOutStatus("nenhuma conta detectada", "warn")
+        } else {
+          setOutStatus("gerado ✔", "ok")
+        }
+        copyState.textContent = "—"
+      }
+
+      async function copyOut() {
+        try {
+          await navigator.clipboard.writeText(output.value || "")
+          copyState.textContent = "Copiado ✔"
+        } catch (e) {
+          copyState.textContent = "Falhou (sem permissão)"
+        }
+      }
+
+      function clearAll() {
+        input.value = ""
+        output.value = ""
+        count.textContent = "0"
+        updateCharCount()
+        setOutStatus("pronto", "ok")
+        copyState.textContent = "—"
+      }
+
+      function downloadTxt() {
+        const text = output.value || ""
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = "contas_nome_senha.txt"
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+      }
+
+      function loadExample() {
+        input.value = `
+Esuwoefuop
+BE
+Padrao
+139  1142  470|553 K54  -  4.067  123.728  79.916  175.047  175.047  Livre  03:11
+
+Hiterari
+BE
+Padrao
+139  1142  468|559 K54  -  4.180  151.085  75.953  175.047  175.047  Livre  03:11
+
+zBuyaititz9
+BE
+Padrao
+Padrao
+139  1163  429|524 K54  -  3.305  115.798  115.798  115.798  115.798  Livre  03:10
+        `.trim()
+        updateCharCount()
+        generate()
+      }
+
+      // Events
+      input.addEventListener("input", updateCharCount)
+      $("btnGenerate").addEventListener("click", generate)
+      $("btnCopy").addEventListener("click", copyOut)
+      $("btnClear").addEventListener("click", clearAll)
+      $("btnDownload").addEventListener("click", downloadTxt)
+      $("btnExample").addEventListener("click", loadExample)
+
+      // init
+      updateCharCount()
+      setOutStatus("pronto", "ok")
+    </script>
+  </body>
+</html>

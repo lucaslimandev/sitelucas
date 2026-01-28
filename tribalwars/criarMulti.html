@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Copiador Pro + Timer</title>
+    <style>
+      :root {
+        --bg-body: #0b1220;
+        --bg-card: #0f1a2e;
+        --border: #223152;
+        --primary: #2a4a8a;
+        --primary-hover: #3b65b8;
+        --text: #e5e7eb;
+        --text-muted: #94a3b8;
+        --accent-timer: #0ea5e9;
+        --success: #10b981;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg-body);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Header & Title */
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      /* Timer Dashboard */
+      .timer-dashboard {
+        display: flex;
+        gap: 15px;
+        background: #071024;
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .stat-box {
+        display: flex;
+        flex-direction: column;
+        padding: 0 10px;
+        border-right: 1px solid var(--border);
+      }
+      .stat-box:last-child {
+        border-right: none;
+      }
+      .stat-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .stat-value {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .stat-value.avg { color: var(--accent-timer); }
+      
+      .timer-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+      }
+      .btn-start {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--success);
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+      .btn-start:hover { background: rgba(16, 185, 129, 0.25); }
+      
+      .btn-stop {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.3);
+        display: none; /* Hidden by default */
+      }
+      .btn-stop:hover { background: rgba(239, 68, 68, 0.25); }
+
+      .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--success);
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse 1.5s infinite;
+        display: none;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      }
+
+      /* Textarea */
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #2a3b63;
+        background: #0b162c;
+        color: #e5e7eb;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        margin-bottom: 15px;
+        box-sizing: border-box;
+      }
+      textarea:focus {
+        outline: 2px solid var(--primary);
+        border-color: transparent;
+      }
+
+      /* Controls Row */
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      button.action {
+        background: #1f2f54;
+        border: 1px solid #2b3f6f;
+        color: #e5e7eb;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      button.action:hover { filter: brightness(1.1); border-color: #4b6cb7; }
+      button.action:active { transform: translateY(1px); }
+      
+      button.primary { background: var(--primary); border-color: var(--primary-hover); }
+      button.warn { background: #3f1818; border-color: #5c2b2b; color: #fca5a5; }
+
+      .stepBadge {
+        background: #0b162c;
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .stepBadge b { color: #fff; }
+
+      /* Toast */
+      #toast {
+        color: #86efac;
+        font-size: 13px;
+        font-weight: 600;
+        opacity: 0;
+        transition: opacity 0.2s;
+        margin-left: auto;
+      }
+      #toast.show { opacity: 1; }
+
+      /* Table */
+      .tablewrap {
+        overflow: auto;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+        background: #0b162c;
+      }
+      th, td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #1c2a49;
+        text-align: left;
+        font-size: 13px;
+      }
+      th {
+        position: sticky;
+        top: 0;
+        background: #0f1a2e;
+        color: var(--text-muted);
+        font-weight: 600;
+        z-index: 2;
+      }
+      td code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: #bfdbfe;
+      }
+      
+      /* Status Colors */
+      tr.active {
+        background: rgba(96, 165, 250, 0.08);
+      }
+      tr.active td:first-child {
+        border-left: 3px solid var(--primary-hover);
+      }
+      tr.done { opacity: 0.5; }
+      
+      .status-pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .st-0 { color: #64748b; background: rgba(100, 116, 139, 0.1); }
+      .st-1 { color: #facc15; background: rgba(250, 204, 21, 0.1); }
+      .st-2 { color: #f97316; background: rgba(249, 115, 22, 0.1); }
+      .st-3 { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+
+      .time-col {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--accent-timer);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        
+        <header>
+          <h1>Copiador em Sequência</h1>
+          
+          <div class="timer-dashboard">
+             <div class="stat-box">
+                <span class="stat-label">Timer Ativo</span>
+                <span class="stat-value" id="timerDisplay">00:00</span>
+             </div>
+             <div class="stat-box">
+                <span class="stat-label">Média/Conta</span>
+                <span class="stat-value avg" id="avgDisplay">--:--</span>
+             </div>
+             <div class="stat-box">
+                <span class="stat-label">Feitas</span>
+                <span class="stat-value" id="countDisplay">0</span>
+             </div>
+
+             <button id="btnStartTimer" class="timer-btn btn-start">
+               <span class="pulse-dot" id="timerDot"></span>
+               <span id="btnStartText">INICIAR TIMER</span>
+             </button>
+             <button id="btnStopTimer" class="timer-btn btn-stop">PARAR</button>
+          </div>
+        </header>
+
+        <textarea
+          id="input"
+          spellcheck="false"
+          placeholder="Cole sua lista aqui...
+nick:senha:email"
+        ></textarea>
+
+        <div class="controls">
+          <button id="load" class="action primary">📥 Carregar Lista</button>
+          
+          <div style="width: 1px; height: 24px; background: #223152; margin: 0 10px;"></div>
+
+          <button id="copyNick" class="action primary">1. Nick (N)</button>
+          <button id="copyPass" class="action primary">2. Senha (S)</button>
+          <button id="copyEmail" class="action primary">3. Email (E)</button>
+
+          <div style="flex: 1"></div>
+
+          <span class="stepBadge">
+            Linha: <b id="lineInfo">0/0</b> | Etapa: <b id="stepInfo">-</b>
+          </span>
+
+          <button id="prevRow" class="action">◀</button>
+          <button id="nextRow" class="action">▶</button>
+          <button id="reset" class="action warn">Reset</button>
+
+          <span id="toast">Copiado ✅</span>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th width="40">#</th>
+                <th>Nick</th>
+                <th>Senha</th>
+                <th>Email</th>
+                <th width="120">Tempo</th>
+                <th width="140">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      // Elementos
+      const els = {
+        input: $("input"),
+        tbody: $("tbody"),
+        toast: $("toast"),
+        lineInfo: $("lineInfo"),
+        stepInfo: $("stepInfo"),
+        timerDisplay: $("timerDisplay"),
+        avgDisplay: $("avgDisplay"),
+        countDisplay: $("countDisplay"),
+        btnStart: $("btnStartTimer"),
+        btnStop: $("btnStopTimer"),
+        btnStartText: $("btnStartText"),
+        timerDot: $("timerDot")
+      };
+
+      // Estado
+      let state = {
+        rows: [],
+        cursor: 0,
+        step: 0, // 0=nick, 1=pass, 2=email
+        
+        // Timer State
+        timerActive: false,
+        sessionStartTime: 0,
+        currentRowStartTime: 0,
+        completedCount: 0,
+        totalDuration: 0, // soma dos tempos das contas finalizadas
+        intervalId: null
+      };
+
+      // --- Funções de Ajuda ---
+
+      function formatTime(ms) {
+        if (!ms || ms < 0) return "--:--";
+        const totalSeconds = Math.floor(ms / 1000);
+        const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const s = (totalSeconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      }
+
+      function showToast(text = "Copiado ✅") {
+        els.toast.textContent = text;
+        els.toast.classList.add("show");
+        setTimeout(() => els.toast.classList.remove("show"), 900);
+      }
+
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast();
+        } catch (e) {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          showToast();
+        }
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      // --- Lógica Principal ---
+
+      function parseLines(raw) {
+        return raw.split(/\r?\n/)
+          .map(l => l.trim())
+          .filter(Boolean)
+          .map(line => {
+            const parts = line.split(":");
+            return {
+              nick: (parts[0] || "").trim(),
+              pass: (parts[1] || "").trim(),
+              email: parts.slice(2).join(":").trim(),
+              progress: 0,
+              timeTaken: null // armazena o tempo (ms) gasto nesta conta
+            };
+          })
+          .filter(r => r.nick && r.pass);
+      }
+
+      function updateUI() {
+        // Stats
+        els.countDisplay.innerText = state.completedCount;
+        
+        if (state.completedCount > 0) {
+            const avg = state.totalDuration / state.completedCount;
+            els.avgDisplay.innerText = formatTime(avg);
+        } else {
+            els.avgDisplay.innerText = "--:--";
+        }
+
+        // Tabela
+        els.tbody.innerHTML = "";
+        state.rows.forEach((r, i) => {
+          const tr = document.createElement("tr");
+          if (i === state.cursor) tr.classList.add("active");
+          if (r.progress >= 3) tr.classList.add("done");
+
+          // Status Badge
+          let statusClass = "st-0";
+          let statusText = "Pendente";
+          if (r.progress === 1) { statusText = "Nick OK"; statusClass = "st-1"; }
+          if (r.progress === 2) { statusText = "Senha OK"; statusClass = "st-2"; }
+          if (r.progress === 3) { statusText = "Concluído"; statusClass = "st-3"; }
+
+          const timeDisplay = r.timeTaken ? formatTime(r.timeTaken) : (i === state.cursor && state.timerActive ? "..." : "-");
+
+          tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td><code>${escapeHtml(r.nick)}</code></td>
+            <td><code>${escapeHtml(r.pass)}</code></td>
+            <td><code>${escapeHtml(r.email)}</code></td>
+            <td class="time-col">${timeDisplay}</td>
+            <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+          `;
+          els.tbody.appendChild(tr);
+        });
+
+        // Info Badge
+        if (!state.rows.length) {
+          els.lineInfo.textContent = "0/0";
+          els.stepInfo.textContent = "-";
+        } else {
+          els.lineInfo.textContent = `${state.cursor + 1}/${state.rows.length}`;
+          els.stepInfo.textContent = state.step === 0 ? "Nick" : state.step === 1 ? "Senha" : "Email";
+        }
+      }
+
+      // --- Lógica do Timer ---
+
+      function startTimer() {
+        if (state.timerActive) return;
+        
+        state.timerActive = true;
+        // Se for o início absoluto ou reinício, define currentRowStartTime
+        if (!state.currentRowStartTime) {
+            state.currentRowStartTime = Date.now();
+        }
+        
+        // UI updates
+        els.timerDot.style.display = "inline-block";
+        els.btnStart.style.display = "none";
+        els.btnStop.style.display = "flex";
+
+        // Intervalo visual (apenas para mostrar o relógio correndo na conta atual)
+        state.intervalId = setInterval(() => {
+            if (state.currentRowStartTime) {
+                const diff = Date.now() - state.currentRowStartTime;
+                els.timerDisplay.innerText = formatTime(diff);
+            }
+        }, 1000);
+      }
+
+      function stopTimer() {
+        state.timerActive = false;
+        clearInterval(state.intervalId);
+        
+        // UI updates
+        els.timerDot.style.display = "none";
+        els.btnStart.style.display = "flex";
+        els.btnStop.style.display = "none";
+        els.btnStartText.innerText = "RETOMAR";
+      }
+
+      function finishAccountRow() {
+        // Lógica chamada quando copia o email (última etapa)
+        if (state.timerActive && state.currentRowStartTime) {
+            const now = Date.now();
+            const duration = now - state.currentRowStartTime;
+            
+            // Salva na linha atual
+            if (state.rows[state.cursor]) {
+                state.rows[state.cursor].timeTaken = duration;
+            }
+
+            // Atualiza globais
+            state.totalDuration += duration;
+            state.completedCount++;
+            
+            // Reseta tempo para a próxima conta
+            state.currentRowStartTime = now; 
+        }
+      }
+
+      // --- Ações de Cópia ---
+
+      async function doAction(type) {
+        if (!state.rows.length) return;
+        const r = state.rows[state.cursor];
+
+        // Se o usuário começar a copiar sem dar start no timer, damos auto-start? 
+        // Melhor não forçar, mas vamos garantir que se ele der start no meio, funcione.
+        
+        if (type === 'nick') {
+            await copyText(r.nick);
+            r.progress = Math.max(r.progress, 1);
+            state.step = 1;
+        } else if (type === 'pass') {
+            await copyText(r.pass);
+            r.progress = Math.max(r.progress, 2);
+            state.step = 2;
+        } else if (type === 'email') {
+            await copyText(r.email);
+            r.progress = Math.max(r.progress, 3);
+            
+            // MOMENTO CRÍTICO: Finalizou a conta
+            finishAccountRow();
+
+            // Avançar linha
+            if (state.cursor < state.rows.length - 1) {
+                state.cursor++;
+                state.step = 0;
+            } else {
+                state.step = 0;
+                showToast("Lista Finalizada! 🏁");
+                stopTimer();
+            }
+        }
+        updateUI();
+      }
+
+      // --- Event Listeners ---
+
+      els.btnStart.addEventListener("click", startTimer);
+      els.btnStop.addEventListener("click", stopTimer);
+
+      $("load").addEventListener("click", () => {
+        state.rows = parseLines(els.input.value);
+        state.cursor = 0;
+        state.step = 0;
+        state.completedCount = 0;
+        state.totalDuration = 0;
+        state.currentRowStartTime = 0;
+        els.timerDisplay.innerText = "00:00";
+        els.avgDisplay.innerText = "--:--";
+        stopTimer();
+        els.btnStartText.innerText = "INICIAR TIMER";
+        updateUI();
+        showToast(`Carregado (${state.rows.length})`);
+      });
+
+      $("copyNick").addEventListener("click", () => doAction('nick'));
+      $("copyPass").addEventListener("click", () => doAction('pass'));
+      $("copyEmail").addEventListener("click", () => doAction('email'));
+
+      $("prevRow").addEventListener("click", () => {
+        if (!state.rows.length) return;
+        state.cursor = Math.max(0, state.cursor - 1);
+        state.step = 0;
+        // Se voltar a linha, resetamos o timer da linha? 
+        // Por simplicidade, mantemos o timer correndo linearmente.
+        state.currentRowStartTime = Date.now(); 
+        updateUI();
+      });
+
+      $("nextRow").addEventListener("click", () => {
+        if (!state.rows.length) return;
+        state.cursor = Math.min(state.rows.length - 1, state.cursor + 1);
+        state.step = 0;
+        state.currentRowStartTime = Date.now();
+        updateUI();
+      });
+
+      $("reset").addEventListener("click", () => {
+        state.rows.forEach(r => { r.progress = 0; r.timeTaken = null; });
+        state.cursor = 0;
+        state.step = 0;
+        state.completedCount = 0;
+        state.totalDuration = 0;
+        els.timerDisplay.innerText = "00:00";
+        els.avgDisplay.innerText = "--:--";
+        stopTimer();
+        els.btnStartText.innerText = "INICIAR TIMER";
+        updateUI();
+      });
+
+      // Teclado
+      document.addEventListener("keydown", (e) => {
+        const active = document.activeElement;
+        if (active && (active.tagName === "TEXTAREA" || active.tagName === "INPUT")) return;
+
+        if (e.key.toLowerCase() === "n") doAction('nick');
+        if (e.key.toLowerCase() === "s") doAction('pass');
+        if (e.key.toLowerCase() === "e") doAction('email');
+
+        if (e.key === "ArrowLeft") $("prevRow").click();
+        if (e.key === "ArrowRight") $("nextRow").click();
+      });
+
+      updateUI();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tribal Wars — Nick Comparator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #111827;
+        --border: #1f2933;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --primary: #3b82f6;
+        --success: #22c55e;
+        --danger: #ef4444;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+          sans-serif;
+        background: linear-gradient(135deg, #020617, #0b1020);
+        color: var(--text);
+        padding: 30px;
+      }
+
+      .app {
+        max-width: 1100px;
+        margin: auto;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .title h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .title p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+      }
+
+      input,
+      textarea {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      input {
+        width: 120px;
+        text-transform: lowercase;
+      }
+
+      textarea {
+        width: 100%;
+        height: 170px;
+        resize: vertical;
+        margin-top: 14px;
+      }
+
+      button {
+        background: var(--primary);
+        border: none;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: #2563eb;
+      }
+
+      .stats {
+        margin-top: 14px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+      }
+
+      .card h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .badge {
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+
+      .badge.success {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--success);
+      }
+
+      .badge.danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--danger);
+      }
+
+      pre {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--text);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <div class="header">
+        <div class="title">
+          <h1>Tribal Wars — Nick Comparator</h1>
+          <p>Comparação inteligente de nicks com normalização avançada</p>
+        </div>
+
+        <div class="controls">
+          <input id="world" value="br1" placeholder="br1" />
+          <button onclick="carregarJogadores()">Carregar mundo</button>
+        </div>
+      </div>
+
+      <textarea
+        id="input"
+        placeholder="Cole aqui:
+nick:pass
+nick:pass:email"
+      ></textarea>
+
+      <button style="margin-top: 12px" onclick="comparar()">Comparar</button>
+
+      <div class="stats" id="stats">Nenhum mundo carregado</div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>
+            Encontrados
+            <span class="badge success" id="foundCount">0</span>
+          </h3>
+          <pre id="found"></pre>
+        </div>
+
+        <div class="card">
+          <h3>
+            Não encontrados
+            <span class="badge danger" id="notFoundCount">0</span>
+          </h3>
+          <pre id="notFound"></pre>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let nickSet = new Set()
+
+      /* Normalização FINAL e robusta */
+      function normalizarNick(nick) {
+        return nick
+          .toLowerCase()
+          .replace(/\+/g, " ")
+          .replace(/-+/g, " - ")
+          .replace(/\s+/g, " ")
+          .trim()
+      }
+
+      /* Proxy CORS */
+      function getWorldUrl(world) {
+        return `https://corsproxy.io/?https://${world}.tribalwars.com.br/map/player.txt`
+      }
+
+      async function carregarJogadores() {
+        const world = document.getElementById("world").value.trim()
+        if (!world) return alert("Informe um mundo")
+
+        const stats = document.getElementById("stats")
+        stats.innerText = "Carregando jogadores..."
+
+        try {
+          const res = await fetch(getWorldUrl(world))
+          if (!res.ok) throw new Error()
+
+          const text = await res.text()
+
+          const nicks = text
+            .split("\n")
+            .filter((l) => l.trim())
+            .map((l) => normalizarNick(l.split(",")[1]))
+
+          nickSet = new Set(nicks)
+
+          stats.innerText = `Mundo ${world.toUpperCase()} — ${
+            nicks.length
+          } jogadores carregados`
+
+          document.getElementById("found").textContent = ""
+          document.getElementById("notFound").textContent = ""
+          document.getElementById("foundCount").innerText = "0"
+          document.getElementById("notFoundCount").innerText = "0"
+        } catch {
+          stats.innerText = "Erro ao carregar o mundo"
+          nickSet.clear()
+        }
+      }
+
+      function comparar() {
+        if (nickSet.size === 0) {
+          alert("Carregue um mundo primeiro")
+          return
+        }
+
+        const linhas = document
+          .getElementById("input")
+          .value.split("\n")
+          .filter((l) => l.trim())
+
+        const encontrados = []
+        const naoEncontrados = []
+
+        for (const linha of linhas) {
+          const nick = normalizarNick(linha.split(":")[0])
+          ;(nickSet.has(nick) ? encontrados : naoEncontrados).push(linha)
+        }
+
+        encontrados.sort()
+        naoEncontrados.sort()
+
+        document.getElementById("found").textContent = encontrados.join("\n")
+        document.getElementById("notFound").textContent =
+          naoEncontrados.join("\n")
+        document.getElementById("foundCount").innerText = encontrados.length
+        document.getElementById("notFoundCount").innerText =
+          naoEncontrados.length
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gerador Ultimate V3 (Strict Mode)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-body: #0f172a;
+        --bg-card: #1e293b;
+        --bg-input: #334155;
+        --border-color: #475569;
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --text-main: #f1f5f9;
+        --text-muted: #94a3b8;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--bg-body);
+        color: var(--text-main);
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 20px;
+        width: 100%;
+        max-width: 1200px;
+      }
+
+      @media (max-width: 900px) {
+        .container { grid-template-columns: 1fr; }
+      }
+
+      /* Card Styling */
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 15px;
+        margin-bottom: 5px;
+      }
+
+      h2 { margin: 0; font-size: 18px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+      
+      /* Form Elements */
+      .section-group {
+        background: rgba(0,0,0,0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.05);
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        font-weight: 500;
+      }
+
+      input[type="text"], 
+      input[type="number"], 
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        color: var(--text-main);
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+      }
+      input:focus, select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+      }
+
+      /* Grid for checkboxes */
+      .check-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+      .checkbox-wrapper:hover { background: rgba(255,255,255,0.05); }
+      .checkbox-wrapper input { accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; }
+
+      /* Buttons */
+      button {
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+      button:active { transform: scale(0.98); }
+
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+        width: 100%;
+        font-size: 16px;
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+      }
+      .btn-primary:hover { background: var(--primary-hover); }
+
+      .btn-icon { padding: 8px; background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); }
+      .btn-icon:hover { color: white; border-color: var(--text-muted); }
+
+      .btn-copy { background: var(--success); color: white; flex: 1; }
+      .btn-copy:hover { filter: brightness(1.1); }
+
+      .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); font-size: 12px; padding: 8px 15px; }
+      .btn-danger:hover { background: var(--danger); color: white; }
+
+      /* Profile Manager */
+      .profile-bar { display: flex; gap: 8px; }
+      .profile-bar select { flex: 1; }
+
+      /* Output Area */
+      .output-wrapper { position: relative; height: 100%; display: flex; flex-direction: column; }
+      textarea {
+        flex: 1;
+        width: 100%;
+        background: #0b1120;
+        color: #a5f3fc;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 20px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 13px;
+        resize: none;
+        line-height: 1.6;
+        min-height: 400px;
+      }
+      textarea:focus { border-color: var(--primary); outline: none; }
+
+      .stats-bar {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 10px;
+        padding: 0 5px;
+      }
+
+      /* Toasts */
+      #toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 1000;
+      }
+      .toast {
+        background: var(--bg-card);
+        border-left: 4px solid var(--primary);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 4px;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+        animation: slideIn 0.3s ease-out;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+      /* Range Slider styling */
+      input[type=range] { width: 100%; margin: 10px 0; accent-color: var(--primary); }
+
+      .badge {
+        background: var(--primary);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div class="container">
+      
+      <div class="card">
+        
+        <div class="section-group">
+          <label>📂 Perfis de Configuração</label>
+          <div class="profile-bar">
+            <select id="profileSelect">
+              <option value="">-- Carregar Perfil --</option>
+            </select>
+            <button class="btn-icon" id="btnSaveProfile" title="Salvar">💾</button>
+            <button class="btn-icon" id="btnDeleteProfile" title="Apagar" style="color: var(--danger)">🗑️</button>
+          </div>
+          <input type="text" id="newProfileName" placeholder="Nome do perfil..." style="margin-top: 8px; display: none;">
+        </div>
+
+        <div class="section-group">
+          <label style="color: var(--primary); margin-bottom: 10px;">1. CONFIGURAÇÃO DE NICK</label>
+          
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
+            <div>
+              <label>Tipo</label>
+              <select id="nickStyle">
+                <option value="syllabic">Pronunciável (Reais)</option>
+                <option value="gamer">Gamer (xNick, zNick)</option>
+                <option value="random">Aleatório (Letras)</option>
+              </select>
+            </div>
+            <div>
+              <label>Tamanho</label>
+              <input type="number" id="nickLen" value="6" min="3" max="15">
+            </div>
+          </div>
+
+          <div class="check-grid">
+             <label class="checkbox-wrapper">
+               <input type="checkbox" id="nickCap" checked> Inicial Maiúscula
+             </label>
+             <label class="checkbox-wrapper">
+               <input type="checkbox" id="nickUseNumbers" checked> Suffix Numérico
+             </label>
+          </div>
+          
+          <div id="nickNumConfig" style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+             <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin:0; font-size:12px;">Dígitos no final:</label>
+                <input type="number" id="nickNumDigits" value="3" min="1" max="5" style="width:60px;">
+             </div>
+          </div>
+        </div>
+
+        <div class="section-group">
+          <label style="color: var(--primary); margin-bottom: 10px;">2. CONFIGURAÇÃO DE SENHA</label>
+          
+          <select id="passMode" style="margin-bottom:10px;">
+             <option value="generate">Gerar Segura (Garantida)</option>
+             <option value="fixed">Senha Única para Todos</option>
+          </select>
+
+          <div id="passGenOptions">
+            <div style="display:flex; justify-content:space-between;">
+              <label>Comprimento</label>
+              <label style="color:var(--primary)" id="passLenVal">12</label>
+            </div>
+            <input type="range" id="passLen" min="6" max="32" value="12">
+            
+            <label style="font-size:11px; color:var(--warning); margin-bottom:8px;">* Garante pelo menos 1 de cada selecionado</label>
+            
+            <div class="check-grid">
+              <label class="checkbox-wrapper"><input type="checkbox" id="pUpper" checked> Maiúsculas (A-Z)</label>
+              <label class="checkbox-wrapper"><input type="checkbox" id="pLower" checked> Minúsculas (a-z)</label>
+              <label class="checkbox-wrapper"><input type="checkbox" id="pNumbers" checked> Números (0-9)</label>
+              <label class="checkbox-wrapper"><input type="checkbox" id="pSymbols" checked> Símbolos (!@#)</label>
+            </div>
+          </div>
+
+          <div id="passFixedOptions" style="display:none;">
+            <input type="text" id="passFixedValue" placeholder="Digite a senha padrão...">
+          </div>
+        </div>
+
+        <div class="section-group">
+          <label style="color: var(--primary); margin-bottom: 10px;">3. CONFIGURAÇÃO DE EMAIL</label>
+          <input type="text" id="baseEmail" placeholder="email_base@gmail.com">
+          
+          <div style="margin-top:10px;">
+            <label>Variação (Alias)</label>
+            <select id="emailAlias">
+              <option value="dot">Ponto Aleatório (g.mail)</option>
+              <option value="plus_nick">Sufixo Nick (+nick)</option>
+              <option value="plus_num">Sufixo Numérico (+1)</option>
+              <option value="none">Repetir Email</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; padding-top:10px; border-top: 1px solid var(--border-color);">
+           <div style="flex:1;">
+             <label>Quantidade</label>
+             <input type="number" id="qty" value="10">
+           </div>
+           <button class="btn-primary" id="btnGenerate" style="flex:2; margin-top: 20px;">⚡ GERAR LISTA</button>
+        </div>
+
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+           <h2>📜 Resultado <span class="badge" id="badgeCount">0</span></h2>
+           <div style="display:flex; gap:10px;">
+             <button class="btn-copy" id="btnCopy">Copiar Tudo</button>
+           </div>
+        </div>
+        
+        <div class="output-wrapper">
+          <textarea id="output" readonly placeholder="Aguardando geração..."></textarea>
+          
+          <div class="stats-bar">
+             <span>Histórico Anti-Duplicate: <b id="historyCount" style="color:var(--text-main)">0</b> nicks salvos.</span>
+             <button class="btn-danger" id="btnClearHistory">Limpar Histórico</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      // --- STATE MANAGERS ---
+      const STORAGE_KEYS = {
+        HISTORY: "gen_history_strict_v3",
+        PROFILES: "gen_profiles_v3"
+      };
+
+      let globalHistory = new Set(JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || "[]"));
+      let profiles = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROFILES) || "{}");
+
+      // --- TOAST NOTIFICATION SYSTEM ---
+      function showToast(msg, type = 'success') {
+        const container = $('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.style.borderLeftColor = type === 'error' ? 'var(--danger)' : 'var(--success)';
+        toast.innerHTML = type === 'error' ? `❌ ${msg}` : `✅ ${msg}`;
+        
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateX(100%)';
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+
+      // --- CORE LOGIC: STRICT PASSWORD GENERATOR ---
+      function generateStrictPassword(len, opts) {
+        const pools = {
+          lower: 'abcdefghijklmnopqrstuvwxyz',
+          upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+          number: '0123456789',
+          symbol: '!@#$%&*+?'
+        };
+
+        let mandatoryChars = [];
+        let allowedPool = '';
+
+        // 1. Coleta obrigatórios e monta o pool geral
+        if (opts.lower) {
+          mandatoryChars.push(pools.lower[Math.floor(Math.random() * pools.lower.length)]);
+          allowedPool += pools.lower;
+        }
+        if (opts.upper) {
+          mandatoryChars.push(pools.upper[Math.floor(Math.random() * pools.upper.length)]);
+          allowedPool += pools.upper;
+        }
+        if (opts.number) {
+          mandatoryChars.push(pools.number[Math.floor(Math.random() * pools.number.length)]);
+          allowedPool += pools.number;
+        }
+        if (opts.symbol) {
+          mandatoryChars.push(pools.symbol[Math.floor(Math.random() * pools.symbol.length)]);
+          allowedPool += pools.symbol;
+        }
+
+        // Validação de segurança
+        if (allowedPool === '') return 'erro-selecione-tipos';
+        if (len < mandatoryChars.length) len = mandatoryChars.length; // Ajusta tamanho se for muito curto
+
+        // 2. Preenche o restante
+        let remainingLen = len - mandatoryChars.length;
+        for (let i = 0; i < remainingLen; i++) {
+          mandatoryChars.push(allowedPool[Math.floor(Math.random() * allowedPool.length)]);
+        }
+
+        // 3. Embaralha (Fisher-Yates Shuffle) para não ter padrões
+        for (let i = mandatoryChars.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [mandatoryChars[i], mandatoryChars[j]] = [mandatoryChars[j], mandatoryChars[i]];
+        }
+
+        return mandatoryChars.join('');
+      }
+
+      // --- CORE LOGIC: NICK GENERATOR ---
+      function generateNick(style, len) {
+        const vowels = "aeiou";
+        const cons = "bcdfghjklmnpqrstvwxyz";
+        
+        if (style === 'random') {
+          let str = "";
+          const all = vowels + cons;
+          for(let i=0; i<len; i++) str += all[Math.floor(Math.random()*all.length)];
+          return str;
+        }
+
+        if (style === 'syllabic' || style === 'gamer') {
+          let str = "";
+          let isCon = Math.random() > 0.2; // 80% chance começar com consoante
+          for(let i=0; i<len; i++) {
+             str += isCon ? cons[Math.floor(Math.random()*cons.length)] : vowels[Math.floor(Math.random()*vowels.length)];
+             isCon = !isCon; 
+             // Chance de vogal dupla para soar mais natural
+             if (!isCon && Math.random() > 0.8 && i < len-1) {
+               str += vowels[Math.floor(Math.random()*vowels.length)];
+               i++;
+             }
+          }
+          
+          if(style === 'gamer') {
+            const prefix = Math.random() > 0.5 ? 'x' : 'z';
+            str = prefix + str.charAt(0).toUpperCase() + str.slice(1) + prefix;
+          }
+          
+          return str;
+        }
+      }
+
+      function addDotToEmail(user, domain) {
+        // Insere UM ponto aleatório no user do email
+        if(user.length < 3) return `${user}@${domain}`;
+        const pos = Math.floor(Math.random() * (user.length - 1)) + 1;
+        return `${user.slice(0, pos)}.${user.slice(pos)}@${domain}`;
+      }
+
+      // --- MAIN GENERATOR FUNCTION ---
+      function generateList() {
+        const qty = parseInt($('qty').value);
+        if(qty > 5000) return showToast("Máximo de 5000 por vez para não travar!", "error");
+
+        // Configs Nick
+        const nStyle = $('nickStyle').value;
+        const nLen = parseInt($('nickLen').value);
+        const nUseNum = $('nickUseNumbers').checked;
+        const nDigits = parseInt($('nickNumDigits').value);
+        const nCap = $('nickCap').checked;
+
+        // Configs Pass
+        const pMode = $('passMode').value;
+        const pOpts = {
+          lower: $('pLower').checked,
+          upper: $('pUpper').checked,
+          number: $('pNumbers').checked,
+          symbol: $('pSymbols').checked
+        };
+        const pLen = parseInt($('passLen').value);
+        const pFixed = $('passFixedValue').value || "Mudar123";
+
+        // Configs Email
+        let emailBase = $('baseEmail').value.trim();
+        const emailMode = $('emailAlias').value;
+        
+        // Parse email
+        let eUser = "user", eDomain = "email.com";
+        if(emailBase.includes("@")) {
+           [eUser, eDomain] = emailBase.split("@");
+        } else if(emailBase) {
+           eUser = emailBase;
+        }
+
+        let results = [];
+        let count = 0;
+        let fails = 0;
+
+        while(count < qty) {
+          if(fails > 1000) {
+             showToast("Muitas colisões de nick. Aumente o tamanho ou limpe o histórico.", "error");
+             break;
+          }
+
+          // 1. Nick
+          let nick = generateNick(nStyle, nLen);
+          
+          if(nUseNum) {
+             let nums = "";
+             for(let k=0; k<nDigits; k++) nums += Math.floor(Math.random()*10);
+             nick += nums;
+          }
+
+          if(nCap && nStyle !== 'gamer') nick = nick.charAt(0).toUpperCase() + nick.slice(1);
+
+          // Anti-Duplicate
+          if(globalHistory.has(nick)) {
+             fails++;
+             continue;
+          }
+          globalHistory.add(nick);
+
+          // 2. Pass
+          let password = "";
+          if(pMode === 'fixed') {
+            password = pFixed;
+          } else {
+            password = generateStrictPassword(pLen, pOpts);
+            if(password === 'erro-selecione-tipos') {
+              showToast("Selecione pelo menos um tipo de caractere para a senha!", "error");
+              return;
+            }
+          }
+
+          // 3. Email
+          let emailFinal = "";
+          if(!emailBase) {
+            emailFinal = "sem_email";
+          } else {
+             switch(emailMode) {
+                case 'plus_nick': emailFinal = `${eUser}+${nick.toLowerCase()}@${eDomain}`; break;
+                case 'plus_num': emailFinal = `${eUser}+${count+1}@${eDomain}`; break;
+                case 'dot': emailFinal = addDotToEmail(eUser, eDomain); break;
+                default: emailFinal = `${eUser}@${eDomain}`;
+             }
+          }
+
+          results.push(`${nick}:${password}:${emailFinal}`);
+          count++;
+        }
+
+        $('output').value = results.join("\n");
+        $('badgeCount').innerText = count;
+        
+        // Update History Storage
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify([...globalHistory]));
+        $('historyCount').innerText = globalHistory.size;
+        
+        if(count > 0) showToast(`${count} contas geradas com sucesso!`);
+      }
+
+      // --- UI EVENTS & HELPERS ---
+      
+      $('passLen').addEventListener('input', (e) => $('passLenVal').innerText = e.target.value);
+      
+      $('passMode').addEventListener('change', (e) => {
+         if(e.target.value === 'fixed') {
+           $('passGenOptions').style.display = 'none';
+           $('passFixedOptions').style.display = 'block';
+         } else {
+           $('passGenOptions').style.display = 'block';
+           $('passFixedOptions').style.display = 'none';
+         }
+      });
+
+      $('nickUseNumbers').addEventListener('change', (e) => {
+         $('nickNumConfig').style.display = e.target.checked ? 'block' : 'none';
+      });
+
+      $('btnGenerate').addEventListener('click', generateList);
+      
+      $('btnCopy').addEventListener('click', () => {
+         const out = $('output');
+         if(!out.value) return showToast("Nada para copiar", "error");
+         out.select();
+         document.execCommand('copy');
+         showToast("Copiado para a área de transferência!");
+      });
+
+      $('btnClearHistory').addEventListener('click', () => {
+         if(confirm("Tem certeza? Isso permitirá que nicks antigos sejam gerados novamente.")) {
+            globalHistory.clear();
+            localStorage.removeItem(STORAGE_KEYS.HISTORY);
+            $('historyCount').innerText = 0;
+            showToast("Histórico limpo!");
+         }
+      });
+
+      // --- PROFILE SYSTEM LOGIC ---
+      function getSettings() {
+        return {
+          nickStyle: $('nickStyle').value,
+          nickLen: $('nickLen').value,
+          nickUseNumbers: $('nickUseNumbers').checked,
+          nickNumDigits: $('nickNumDigits').value,
+          passMode: $('passMode').value,
+          passLen: $('passLen').value,
+          pOpts: [$('pUpper').checked, $('pLower').checked, $('pNumbers').checked, $('pSymbols').checked],
+          baseEmail: $('baseEmail').value,
+          emailAlias: $('emailAlias').value
+        };
+      }
+
+      function loadSettings(s) {
+        if(!s) return;
+        $('nickStyle').value = s.nickStyle;
+        $('nickLen').value = s.nickLen;
+        $('nickUseNumbers').checked = s.nickUseNumbers;
+        $('nickNumDigits').value = s.nickNumDigits;
+        $('passMode').value = s.passMode;
+        $('passLen').value = s.passLen;
+        $('passLenVal').innerText = s.passLen;
+        
+        if(s.pOpts) {
+          $('pUpper').checked = s.pOpts[0];
+          $('pLower').checked = s.pOpts[1];
+          $('pNumbers').checked = s.pOpts[2];
+          $('pSymbols').checked = s.pOpts[3];
+        }
+        
+        $('baseEmail').value = s.baseEmail;
+        $('emailAlias').value = s.emailAlias;
+
+        // Triggers
+        $('passMode').dispatchEvent(new Event('change'));
+        $('nickUseNumbers').dispatchEvent(new Event('change'));
+      }
+
+      function renderProfiles() {
+        const sel = $('profileSelect');
+        sel.innerHTML = '<option value="">-- Carregar Perfil --</option>';
+        Object.keys(profiles).forEach(k => {
+          const opt = document.createElement('option');
+          opt.value = k;
+          opt.innerText = k;
+          sel.appendChild(opt);
+        });
+      }
+
+      $('btnSaveProfile').addEventListener('click', () => {
+         const inp = $('newProfileName');
+         if(inp.style.display === 'none') {
+            inp.style.display = 'block';
+            inp.focus();
+         } else {
+            const name = inp.value.trim();
+            if(!name) return;
+            profiles[name] = getSettings();
+            localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
+            renderProfiles();
+            inp.value = '';
+            inp.style.display = 'none';
+            showToast(`Perfil "${name}" salvo!`);
+         }
+      });
+
+      $('profileSelect').addEventListener('change', (e) => {
+         if(profiles[e.target.value]) {
+            loadSettings(profiles[e.target.value]);
+            showToast("Configurações carregadas.");
+         }
+      });
+
+      $('btnDeleteProfile').addEventListener('click', () => {
+         const name = $('profileSelect').value;
+         if(!name) return;
+         if(confirm(`Deletar perfil ${name}?`)) {
+            delete profiles[name];
+            localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
+            renderProfiles();
+            showToast("Perfil deletado.");
+         }
+      });
+
+      // Init
+      renderProfiles();
+      $('historyCount').innerText = globalHistory.size;
+
+    </script>
+  </body>
+</html>

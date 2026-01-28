@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Validador Tribal Wars</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #1a1a1a;
+        color: #eee;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+      }
+      .container {
+        width: 100%;
+        max-width: 600px;
+        background: #2d2d2d;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      }
+      textarea {
+        width: 100%;
+        height: 150px;
+        background: #3d3d3d;
+        color: #fff;
+        border: 1px solid #555;
+        padding: 10px;
+        border-radius: 4px;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 4px;
+        background: #28a745;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #218838;
+      }
+      #status {
+        margin-top: 20px;
+        font-size: 0.9em;
+      }
+      .log-item {
+        padding: 5px;
+        border-bottom: 1px solid #444;
+      }
+      .success {
+        color: #52f07d;
+      }
+      .error {
+        color: #ff6b6b;
+      }
+      .warning {
+        color: #ffd93d;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Ativador de Contas TW</h2>
+      <p>Cole a lista (Nick:Senha:Email):</p>
+      <textarea
+        id="listaContas"
+        placeholder="nick1:senha1:email1&#10;nick2:senha2:email2"
+      ></textarea>
+      <button id="btnIniciar" onclick="processar()">Iniciar Validação</button>
+
+      <div id="status">
+        <strong>Progresso: <span id="progresso">0/0</span></strong>
+        <div id="logSaida"></div>
+      </div>
+    </div>
+
+    <script>
+      // Substitua pela sua URL de WEB APP (veja o passo 2 abaixo)
+      const EMAIL_API_URL =
+        "https://script.google.com/macros/s/AKfycbxVO9oXXClJhKRtJkxq6FdJMCfdL7mqTmlj93ula3VbAJCQLldMnDl8j1R7LQE6httB/exec"
+      const EMAIL_API_TOKEN = "nobreotario"
+
+      const esperar = (ms) => new Promise((r) => setTimeout(r, ms))
+
+      function addLog(msg, tipo = "") {
+        const out = document.getElementById("logSaida")
+        const div = document.createElement("div")
+        div.className = "log-item " + tipo
+        div.innerText = msg
+        out.prepend(div) // Mostra o mais recente no topo
+      }
+
+      async function processar() {
+        const input = document.getElementById("listaContas").value
+        const linhas = input.split("\n").filter((l) => l.trim() !== "")
+        if (linhas.length === 0) return alert("Lista vazia!")
+
+        document.getElementById("btnIniciar").disabled = true
+        const progressoTxt = document.getElementById("progresso")
+
+        for (let i = 0; i < linhas.length; i++) {
+          const [nick] = linhas[i].split(":")
+          progressoTxt.innerText = `${i + 1}/${linhas.length}`
+
+          try {
+            const query = `from:noreply@tribalwars.net "${nick.trim()}" subject:"Confirmar endereço de e-mail"`
+            const url = `${EMAIL_API_URL}?token=${EMAIL_API_TOKEN}&q=${encodeURIComponent(query)}&limit=3&includeBody=true`
+
+            // Usamos redirect: 'follow' para lidar com os redirecionamentos do Apps Script
+            const response = await fetch(url)
+            const json = await response.json()
+
+            let validado = false
+
+            if (json.data && json.data.length > 0) {
+              for (const email of json.data) {
+                const link = extrairLink(email.body)
+                if (link) {
+                  await fetch(link, { mode: "no-cors" })
+                  addLog(`✅ ${nick}: Ativado com sucesso!`, "success")
+                  validado = true
+                  break
+                }
+              }
+              if (!validado)
+                addLog(
+                  `⚠️ ${nick}: E-mail achado, mas link não identificado.`,
+                  "warning",
+                )
+            } else {
+              addLog(`❌ ${nick}: E-mail não encontrado.`, "error")
+            }
+          } catch (err) {
+            addLog(`🔥 Erro em ${nick}: API Offline ou bloqueada.`, "error")
+          }
+          await esperar(500)
+        }
+
+        addLog("🏁 Processo finalizado.")
+        document.getElementById("btnIniciar").disabled = false
+      }
+
+      function extrairLink(html) {
+        const tempDiv = document.createElement("div")
+        tempDiv.innerHTML = html
+        const links = tempDiv.querySelectorAll("a")
+        for (const a of links) {
+          if (
+            a.href.includes("/page/validate/") ||
+            a.innerText.includes("Activar") ||
+            a.innerText.includes("Assine")
+          ) {
+            return a.href
+          }
+        }
+        return null
+      }
+    </script>
+  </body>
+</html>
