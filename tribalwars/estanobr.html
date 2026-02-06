@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -23,7 +23,11 @@
 
       body {
         margin: 0;
-        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
           sans-serif;
         background: linear-gradient(135deg, #020617, #0b1020);
         color: var(--text);
@@ -209,9 +213,18 @@ nick:pass:email"
           .trim()
       }
 
-      /* Proxy CORS */
+      function sanitizeWorld(w) {
+        w = String(w || "")
+          .trim()
+          .toLowerCase()
+        if (!/^br\d+$/.test(w)) throw new Error("World inválido (ex: br139)")
+        return w
+      }
+
       function getWorldUrl(world) {
-        return `https://corsproxy.io/?https://${world}.tribalwars.com.br/map/player.txt`
+        const w = sanitizeWorld(world)
+        const target = `https://${w}.tribalwars.com.br/map/player.txt`
+        return `https://corsproxy.io/?${encodeURIComponent(target)}`
       }
 
       async function carregarJogadores() {
