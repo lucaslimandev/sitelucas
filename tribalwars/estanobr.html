@@ -44,6 +44,8 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 15px;
       }
 
       .title h1 {
@@ -61,6 +63,7 @@
       .controls {
         display: flex;
         gap: 10px;
+        flex-wrap: wrap;
       }
 
       input,
@@ -73,9 +76,13 @@
         font-size: 14px;
       }
 
-      input {
-        width: 120px;
+      .world-input {
+        width: 140px;
         text-transform: lowercase;
+      }
+
+      .filter-input {
+        width: 140px;
       }
 
       textarea {
@@ -98,6 +105,35 @@
 
       button:hover {
         background: #2563eb;
+      }
+
+      .btn-copy {
+        background: var(--border);
+        padding: 4px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+        color: var(--text);
+      }
+
+      .btn-copy:hover {
+        background: var(--muted);
+        color: #fff;
+      }
+
+      .filters-section {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        align-items: center;
+        background: rgba(17, 24, 39, 0.5);
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+
+      .filters-section span {
+        font-size: 14px;
+        color: var(--muted);
       }
 
       .stats {
@@ -129,6 +165,12 @@
         align-items: center;
       }
 
+      .card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
       .badge {
         font-size: 12px;
         padding: 2px 8px;
@@ -153,6 +195,11 @@
         word-break: break-word;
         color: var(--text);
       }
+
+      .pts-info {
+        color: var(--muted);
+        font-size: 12px;
+      }
     </style>
   </head>
 
@@ -161,13 +208,34 @@
       <div class="header">
         <div class="title">
           <h1>Tribal Wars — Nick Comparator</h1>
-          <p>Comparação inteligente de nicks com normalização avançada</p>
+          <p>
+            Comparação inteligente de nicks com normalização avançada e filtros
+            de pontos
+          </p>
         </div>
 
         <div class="controls">
-          <input id="world" value="br1" placeholder="br1" />
+          <input id="world" class="world-input" value="140" placeholder="140 ou br140" />
           <button onclick="carregarJogadores()">Carregar mundo</button>
         </div>
+      </div>
+
+      <div class="filters-section">
+        <span>Filtros de Pontos:</span>
+        <input
+          id="minPoints"
+          class="filter-input"
+          type="number"
+          placeholder="Mínimo (ex: 1000)"
+          min="0"
+        />
+        <input
+          id="maxPoints"
+          class="filter-input"
+          type="number"
+          placeholder="Máximo (ex: 50000)"
+          min="0"
+        />
       </div>
 
       <textarea
@@ -177,23 +245,35 @@ nick:pass
 nick:pass:email"
       ></textarea>
 
-      <button style="margin-top: 12px" onclick="comparar()">Comparar</button>
+      <button style="margin-top: 12px" onclick="comparar()">
+        Comparar e Filtrar
+      </button>
 
       <div class="stats" id="stats">Nenhum mundo carregado</div>
 
       <div class="grid">
         <div class="card">
           <h3>
-            Encontrados
-            <span class="badge success" id="foundCount">0</span>
+            <div class="card-header-left">
+              Encontrados
+              <span class="badge success" id="foundCount">0</span>
+            </div>
+            <button class="btn-copy" onclick="copiarApenasNickPass('found')">
+              Copiar
+            </button>
           </h3>
           <pre id="found"></pre>
         </div>
 
         <div class="card">
           <h3>
-            Não encontrados
-            <span class="badge danger" id="notFoundCount">0</span>
+            <div class="card-header-left">
+              Não encontrados
+              <span class="badge danger" id="notFoundCount">0</span>
+            </div>
+            <button class="btn-copy" onclick="copiarApenasNickPass('notFound')">
+              Copiar
+            </button>
           </h3>
           <pre id="notFound"></pre>
         </div>
@@ -201,9 +281,8 @@ nick:pass:email"
     </div>
 
     <script>
-      let nickSet = new Set()
+      let nickMap = new Map()
 
-      /* Normalização FINAL e robusta */
       function normalizarNick(nick) {
         return nick
           .toLowerCase()
@@ -214,17 +293,22 @@ nick:pass:email"
       }
 
       function sanitizeWorld(w) {
-        w = String(w || "")
-          .trim()
-          .toLowerCase()
-        if (!/^br\d+$/.test(w)) throw new Error("World inválido (ex: br139)")
-        return w
+        w = String(w || "").trim().toLowerCase()
+
+        if (/^br\d+$/.test(w)) {
+          return w.replace("br", "")
+        }
+
+        if (/^\d+$/.test(w)) {
+          return w
+        }
+
+        throw new Error("World inválido (ex: 140 ou br140)")
       }
 
       function getWorldUrl(world) {
         const w = sanitizeWorld(world)
-        const target = `https://${w}.tribalwars.com.br/map/player.txt`
-        return `https://corsproxy.io/?${encodeURIComponent(target)}`
+        return `https://api.lucaslimadev.com.br/map-player?world=${encodeURIComponent(w)}`
       }
 
       async function carregarJogadores() {
@@ -236,36 +320,51 @@ nick:pass:email"
 
         try {
           const res = await fetch(getWorldUrl(world))
-          if (!res.ok) throw new Error()
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
           const text = await res.text()
+          const linhas = text.split("\n").filter((l) => l.trim())
 
-          const nicks = text
-            .split("\n")
-            .filter((l) => l.trim())
-            .map((l) => normalizarNick(l.split(",")[1]))
+          nickMap.clear()
 
-          nickSet = new Set(nicks)
+          for (const l of linhas) {
+            const partes = l.split(",")
+            if (partes.length >= 5) {
+              let nickBruto = partes[1]
+              try {
+                nickBruto = decodeURIComponent(nickBruto.replace(/\+/g, "%20"))
+              } catch (e) {}
 
-          stats.innerText = `Mundo ${world.toUpperCase()} — ${
-            nicks.length
-          } jogadores carregados`
+              const nick = normalizarNick(nickBruto)
+              const pontos = parseInt(partes[4], 10) || 0
 
-          document.getElementById("found").textContent = ""
-          document.getElementById("notFound").textContent = ""
+              nickMap.set(nick, pontos)
+            }
+          }
+
+          const worldSanitized = sanitizeWorld(world)
+          stats.innerText = `Mundo BR${worldSanitized} — ${nickMap.size} jogadores carregados`
+
+          document.getElementById("found").innerHTML = ""
+          document.getElementById("notFound").innerHTML = ""
           document.getElementById("foundCount").innerText = "0"
           document.getElementById("notFoundCount").innerText = "0"
-        } catch {
+        } catch (err) {
+          console.error(err)
           stats.innerText = "Erro ao carregar o mundo"
-          nickSet.clear()
+          nickMap.clear()
         }
       }
 
       function comparar() {
-        if (nickSet.size === 0) {
+        if (nickMap.size === 0) {
           alert("Carregue um mundo primeiro")
           return
         }
+
+        const minP = parseInt(document.getElementById("minPoints").value) || 0
+        const maxP =
+          parseInt(document.getElementById("maxPoints").value) || Infinity
 
         const linhas = document
           .getElementById("input")
@@ -276,19 +375,63 @@ nick:pass:email"
         const naoEncontrados = []
 
         for (const linha of linhas) {
-          const nick = normalizarNick(linha.split(":")[0])
-          ;(nickSet.has(nick) ? encontrados : naoEncontrados).push(linha)
+          const nickBruto = linha.split(":")[0]
+          const nick = normalizarNick(nickBruto)
+
+          if (nickMap.has(nick)) {
+            const pontos = nickMap.get(nick)
+
+            if (pontos >= minP && pontos <= maxP) {
+              encontrados.push(
+                `${linha} <span class="pts-info">[${pontos.toLocaleString("pt-BR")} pts]</span>`,
+              )
+            } else {
+              naoEncontrados.push(
+                `${linha} <span class="pts-info">[Fora do filtro: ${pontos.toLocaleString("pt-BR")} pts]</span>`,
+              )
+            }
+          } else {
+            naoEncontrados.push(
+              `${linha} <span class="pts-info">[Não existe no BR]</span>`,
+            )
+          }
         }
 
         encontrados.sort()
         naoEncontrados.sort()
 
-        document.getElementById("found").textContent = encontrados.join("\n")
-        document.getElementById("notFound").textContent =
+        document.getElementById("found").innerHTML = encontrados.join("\n")
+        document.getElementById("notFound").innerHTML =
           naoEncontrados.join("\n")
         document.getElementById("foundCount").innerText = encontrados.length
         document.getElementById("notFoundCount").innerText =
           naoEncontrados.length
+      }
+
+      function copiarApenasNickPass(idElemento) {
+        const pre = document.getElementById(idElemento)
+        if (!pre || !pre.innerText) return
+
+        const linhas = pre.innerText.split("\n").filter((l) => l.trim())
+
+        const linhasLimpas = linhas.map((linha) => {
+          const base = linha.split(" [")[0].trim()
+          const partes = base.split(":")
+          if (partes.length >= 2) {
+            return `${partes[0]}:${partes[1]}`
+          }
+          return base
+        })
+
+        const textoParaCopiar = linhasLimpas.join("\n")
+
+        navigator.clipboard
+          .writeText(textoParaCopiar)
+          .then(() => alert("Lista copiada com sucesso (apenas nick e senha)!"))
+          .catch((err) => {
+            console.error("Erro ao copiar: ", err)
+            alert("Falha ao copiar. Verifique as permissões do navegador.")
+          })
       }
     </script>
   </body>
